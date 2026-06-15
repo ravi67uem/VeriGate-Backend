@@ -1,4 +1,4 @@
-const { rewriteContent: rewriteGroq } = require("../utils/groqClient");
+const { rewriteContent: rewriteVenice } = require("../utils/veniceClient");
 
 const rewriteContent = async (req, res) => {
   try {
@@ -7,7 +7,7 @@ const rewriteContent = async (req, res) => {
       return res.status(400).json({ message: "Content is required" });
     }
 
-    const rewritten = await rewriteGroq(content);
+    const rewritten = await rewriteVenice(content);
     res.json({ success: true, rewritten });
   } catch (err) {
     res.status(500).json({ message: "Rewriting failed", error: err.message });

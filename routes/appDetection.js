@@ -178,7 +178,7 @@ const NAME_TO_KEY = {
     "Ios status static detection": "Ios(ss)"
 };
 
-const PRICE_PER_10K = 12.5; // USDT
+const PRICE_PER_10K = 5.2; // USDT
 
 // Helper to parse file and get numbers
 async function parseFile(filePath, ext) {
@@ -233,9 +233,9 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         }
 
         // Calculate Cost Dynamically
-        // Formula: (Points / 2.587) * 12.5 per 10k numbers
+        // Formula: (Points / 2.587) * 5.2 per 10k numbers
         const points = SERVICE_POINTS[appType] || 2.587; // Default to base points if not found
-        const costPer10k = (points / 2.587) * 12.5;
+        const costPer10k = (points / 2.587) * PRICE_PER_10K;
         const cost = (count / 10000) * costPer10k;
 
         // Check Balance

@@ -121,7 +121,7 @@ const generateReport = async (req, res) => {
     const { userId, reportDate } = req.body;
     if (!req.file || !reportDate) return res.status(400).json({ message: "File and date required" });
 
-    const reportCost = 3.5;
+    const reportCost = 2;
     const { data: userData } = await supabase.from("user_limits").select("usdt_balance").eq("id", userId).maybeSingle();
 
     if (!userData || userData.usdt_balance < reportCost) return res.status(403).json({ message: "Insufficient balance" });
