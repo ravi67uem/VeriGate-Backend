@@ -131,12 +131,20 @@ async function buildZipFromRows(rows, dateStr) {
   const { slug: dateSlug, weekday } = formatDateSlug(dateStr);
 
   const keys = Object.keys(rows[0] || {});
-  const colBuyer = keys.includes("buyername") ? "buyername" : keys.includes("buyernam") ? "buyernam" : "buyername";
-  const colCamp = keys.includes("campname") ? "campname" : keys.includes("campnam") ? "campnam" : "campname";
-  const colBill = "billseconds";
-  const colForwarded = "forwardednumber";
-  const colCaller = "callerid";
-  const colCallStart = keys.includes("call_start") ? "call_start" : null;
+  
+  const findKey = (candidates) => {
+    return keys.find(k => {
+      const normalizedK = k.trim().toLowerCase().replace(/[\s_./-]+/g, "");
+      return candidates.includes(normalizedK);
+    });
+  };
+
+  const colBuyer = findKey(["buyername", "buyernam", "buyer", "salesname"]) || "buyername";
+  const colCamp = findKey(["campname", "campnam", "campaign", "camp"]) || "campname";
+  const colBill = findKey(["billseconds", "duration", "talktime", "totaltime"]) || "billseconds";
+  const colForwarded = findKey(["forwardednumber", "targetnumber", "targetnum", "dialedno", "forwardto"]) || "forwardednumber";
+  const colCaller = findKey(["callerid", "caller", "callernumber", "callernum"]) || "callerid";
+  const colCallStart = findKey(["callstart", "calldate", "datetime", "date"]) || null;
 
   const required = [colCamp, colForwarded, colCaller, colBuyer];
   required.forEach((col) => {
@@ -304,41 +312,48 @@ function normalizeVoxeraRows(rows) {
 function normalizeDialcsRows(rows) {
   if (!rows || rows.length === 0) return rows;
   
-  // Check if it's Dialcs format
-  const keys = Object.keys(rows[0] || {}).map(k => k.trim().toLowerCase());
-  const isDialcs = (keys.includes("talk time") || keys.includes("total time")) && 
-                   (keys.includes("caller number") || keys.includes("caller num") || keys.includes("caller id")) && 
-                   (keys.includes("target number") || keys.includes("target num") || keys.includes("dialed no."));
+  // Check if it's Dialcs format (using relaxed/normalized keys check)
+  const keys = Object.keys(rows[0] || {}).map(k => k.trim().toLowerCase().replace(/[\s_./-]+/g, ""));
+  const isDialcs = (keys.includes("talktime") || keys.includes("totaltime")) && 
+                   (keys.includes("callernumber") || keys.includes("callernum") || keys.includes("callerid") || keys.includes("caller")) && 
+                   (keys.includes("targetnumber") || keys.includes("targetnum") || keys.includes("dialedno") || keys.includes("forwardednumber"));
   
   if (!isDialcs) return rows;
 
   return rows.map(row => {
     const obj = {};
+    
     // First, check if talk time is present, as it is the most accurate billable duration
     let hasTalkTime = false;
-    for (const [key, val] of Object.entries(row)) {
-      const cleanH = key.trim().toLowerCase();
-      if (cleanH === "talk time") {
+    for (const key of Object.keys(row)) {
+      const cleanH = key.trim().toLowerCase().replace(/[\s_./-]+/g, "");
+      if (cleanH === "talktime") {
         hasTalkTime = true;
         break;
       }
     }
 
     for (const [key, val] of Object.entries(row)) {
-      const cleanH = key.trim().toLowerCase();
+      const cleanH = key.trim().toLowerCase().replace(/[\s_./-]+/g, "");
       
-      if (cleanH === "buyer name" || cleanH === "buyer nam") obj["buyername"] = val;
-      else if (cleanH === "campaign" || cleanH === "campname") obj["campname"] = val;
-      else if (cleanH === "target number" || cleanH === "target num" || cleanH === "dialed no.") obj["forwardednumber"] = val;
-      else if (cleanH === "caller number" || cleanH === "caller num" || cleanH === "caller id") obj["callerid"] = val;
-      else if (cleanH === "call date") obj["call_start"] = val;
-      else if (cleanH === "talk time") {
+      if (cleanH === "buyername" || cleanH === "buyernam" || cleanH === "buyer") {
+        obj["buyername"] = val;
+      } else if (cleanH === "campaign" || cleanH === "campname" || cleanH === "campnam" || cleanH === "camp") {
+        obj["campname"] = val;
+      } else if (cleanH === "targetnumber" || cleanH === "targetnum" || cleanH === "dialedno" || cleanH === "forwardednumber" || cleanH === "forwardto") {
+        obj["forwardednumber"] = val;
+      } else if (cleanH === "callernumber" || cleanH === "callernum" || cleanH === "callerid" || cleanH === "caller") {
+        obj["callerid"] = val;
+      } else if (cleanH === "calldate" || cleanH === "callstart") {
+        obj["call_start"] = val;
+      } else if (cleanH === "talktime") {
         obj["billseconds"] = hmsToSeconds(val);
-      } else if (cleanH === "total time") {
+      } else if (cleanH === "totaltime") {
         if (!hasTalkTime) {
           obj["billseconds"] = hmsToSeconds(val);
         }
       } else {
+        // Keep the original key case for other custom columns so they don't get destroyed
         obj[key] = val;
       }
     }
