@@ -139,7 +139,7 @@ async function buildZipFromRows(rows, dateStr) {
     });
   };
 
-  const colBuyer = findKey(["buyername", "buyernam", "buyer", "salesname"]) || "buyername";
+  const colBuyer = findKey(["buyername", "buyernam", "buyer", "salesname"]) || keys[0] || "buyername";
   const colCamp = findKey(["campname", "campnam", "campaign", "camp"]) || "campname";
   const colBill = findKey(["billseconds", "duration", "talktime", "totaltime"]) || "billseconds";
   const colForwarded = findKey(["forwardednumber", "targetnumber", "targetnum", "dialedno", "forwardto"]) || "forwardednumber";
@@ -336,7 +336,7 @@ function normalizeDialcsRows(rows) {
     for (const [key, val] of Object.entries(row)) {
       const cleanH = key.trim().toLowerCase().replace(/[\s_./-]+/g, "");
       
-      if (cleanH === "buyername" || cleanH === "buyernam" || cleanH === "buyer") {
+      if (cleanH === "buyername" || cleanH === "buyernam" || cleanH === "buyer" || (key.trim() === "" && obj["buyername"] === undefined)) {
         obj["buyername"] = val;
       } else if (cleanH === "campaign" || cleanH === "campname" || cleanH === "campnam" || cleanH === "camp") {
         obj["campname"] = val;
