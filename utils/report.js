@@ -128,6 +128,7 @@ function uniqueRowsByCallerId(rows, colCaller) {
 }
 
 async function buildZipFromRows(rows, dateStr) {
+  const isDialcs = rows.isDialcs || false;
   const { slug: dateSlug, weekday } = formatDateSlug(dateStr);
 
   const keys = Object.keys(rows[0] || {});
@@ -156,6 +157,25 @@ async function buildZipFromRows(rows, dateStr) {
   rows = cleanForwardedAndCaller(rows, colForwarded, colCaller);
   rows = adjustBillseconds(rows, colBill);
   if (colCallStart) convertCallStart(rows, colCallStart);
+
+  if (isDialcs) {
+    rows.forEach((r) => {
+      let v = r[colBill];
+      if (v === undefined || v === null || v === "") v = 0;
+      v = parseInt(v, 10);
+      if (isNaN(v)) v = 0;
+
+      // Make 0 sec call to 45 sec
+      if (v === 0) {
+        v = 45;
+      }
+      r[colBill] = v;
+
+      // Convert time in minute as well
+      r["billminutes"] = Number((v / 60).toFixed(2));
+      r["Duration (Min)"] = Number((v / 60).toFixed(2));
+    });
+  }
 
   const zip = new JSZip();
   const campMap = groupByCampaign(rows, colCamp);
@@ -320,7 +340,7 @@ function normalizeDialcsRows(rows) {
   
   if (!isDialcs) return rows;
 
-  return rows.map(row => {
+  const result = rows.map(row => {
     const obj = {};
     
     // First, check if talk time is present, as it is the most accurate billable duration
@@ -359,6 +379,8 @@ function normalizeDialcsRows(rows) {
     }
     return obj;
   });
+  result.isDialcs = true;
+  return result;
 }
 
 module.exports = {
