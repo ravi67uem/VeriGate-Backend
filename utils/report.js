@@ -177,6 +177,14 @@ async function buildZipFromRows(rows, dateStr) {
     });
   }
 
+  // Convert billseconds to HH:mm:ss format for the generated reports
+  rows.forEach((r) => {
+    if (r[colBill] !== undefined && r[colBill] !== null) {
+      const secs = parseInt(r[colBill], 10);
+      r[colBill] = secondsToHMS(isNaN(secs) ? 0 : secs);
+    }
+  });
+
   const zip = new JSZip();
   const campMap = groupByCampaign(rows, colCamp);
   
@@ -246,6 +254,18 @@ async function buildZipFromRows(rows, dateStr) {
   }
 
   return await zip.generateAsync({ type: "nodebuffer" });
+}
+
+function secondsToHMS(seconds) {
+  const s = Math.max(0, Math.round(seconds));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  return [
+    String(hrs).padStart(2, '0'),
+    String(mins).padStart(2, '0'),
+    String(secs).padStart(2, '0')
+  ].join(':');
 }
 
 function hmsToSeconds(hms) {
@@ -396,5 +416,6 @@ module.exports = {
   uniqueRowsByCallerId,
   normalizeVoxeraRows,
   normalizeDialcsRows,
-  hmsToSeconds
+  hmsToSeconds,
+  secondsToHMS
 };
