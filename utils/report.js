@@ -278,8 +278,11 @@ function hmsToSeconds(hms) {
     return Math.round(hms);
   }
   
-  const str = String(hms).trim();
+  let str = String(hms).trim();
   if (!str) return 0;
+  
+  // Remove any leading or trailing single/double quotes (e.g. '01:09:58 -> 01:09:58)
+  str = str.replace(/^['"]|['"]$/g, "");
   
   const num = Number(str);
   if (!isNaN(num)) {
