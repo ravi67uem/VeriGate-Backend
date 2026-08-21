@@ -1,0 +1,200 @@
+CheckNumber API - Phone Number Verification Service
+Welcome to CheckNumber API — a phone number verification and validation service for developers and businesses worldwide.
+
+API Introduction
+CheckNumber provides advanced phone number verification APIs that help you validate and verify phone numbers across 20+ platforms in bulk. Whether you need to verify WhatsApp registrations, detect social media accounts, check cryptocurrency exchange users, or query phone carrier information, CheckNumber has you covered.
+
+Typical use cases:
+
+Marketing list cleaning — remove inactive numbers before sending campaigns
+Fraud prevention — verify user-provided phone numbers on registration
+CRM enrichment — identify which platforms your contacts use
+Crypto exchange KYC — cross-check user phone numbers against exchange registrations
+Quick Start
+1. Get your API Key
+Sign up at checknumber.ai and retrieve your API key from the dashboard.
+
+2. Submit a batch task
+Upload a .txt or .csv file with one phone number per line (E.164 format, e.g. +8613800138000):
+
+Terminal window
+curl --location 'https://api.checknumber.ai/v1/tasks' \
+--header 'X-API-Key: YOUR_API_KEY' \
+--form 'file=@"./numbers.txt"' \
+--form 'task_type="ws"'
+
+3. Poll for results
+Terminal window
+curl --location 'https://api.checknumber.ai/v1/gettasks' \
+--header 'X-API-Key: YOUR_API_KEY' \
+--form 'task_id="TASK_ID_FROM_STEP_2"'
+
+When status becomes exported, download the result file from result_url.
+
+API Overview
+Item	Details
+Base URL	https://api.checknumber.ai
+Authentication	X-API-Key header
+Submit task	POST /v1/tasks (multipart/form-data)
+Query status	POST /v1/gettasks (form-data)
+Check balance	GET /v1/balance
+File format	.txt or .csv, one entry per line
+Max batch size	1,000,000 entries per task
+Authentication
+All requests require your API key passed in the request header:
+
+X-API-Key: YOUR_API_KEY
+
+Task Status
+Status	Meaning
+pending	Task queued, waiting to start
+processing	Task is being processed
+exported	Results ready, download from result_url
+Product Catalog
+Social Platform Registration Checkers
+Telegram
+Product	Task type	Return fields
+CheckNumber	tg	number, activated
+Activity Checker	tg_active	number, activated, uid, username, lastseen, activedays, member
+Profile Checker	tg_avatar	Phone, activated, uid, username, Gender, Age, Ethnicity, Avatar, Last Online Time, Active Days, Is Member, first_name, last_name
+WhatsApp
+Product	Task type	Return fields
+CheckNumber	ws	number, activated
+Activity Checker	ws_active	number, activated, activetime, activedays, business
+Profile Checker	ws_avatar	number, activated, age, avatar, category, gender, hair_color, number, skin_color
+CheckNumber
+Product	Task type	Return fields
+Validity Checker	phoneCheck	number, activated
+Activity Checker	active_check	number, activated
+High-Value Checker	high_value_users	Mobile Number, Result
+Viber
+Product	Task type	Return fields
+CheckNumber	viber	number, activated
+Activity Checker	viber_active	number, activated, mid, last_online_time, active_days
+Profile Checker	viber_senior	number, activated, last_online_time, active_days, mid, nickname, person_count, avatar_type, age, skin_color, gender, avatar
+iMessage
+Product	Task type	Return fields
+CheckNumber	imessage	number, activated
+RCS
+Product	Task type	Return fields
+CheckNumber	rcs	number, activated, system
+Signal
+Product	Task type	Return fields
+CheckNumber	signal	number, activated
+VK
+Product	Task type	Return fields
+CheckNumber	vk	number, activated
+Apple ID
+Product	Task type	Return fields
+CheckNumber	apple	number, activated
+Email Checker	apple_email	email, activated
+Facebook
+Product	Task type	Return fields
+CheckNumber	facebook	number, activated
+Email Checker	facebook_email	email, activated
+Amazon
+Product	Task type	Return fields
+CheckNumber	amazon	number, activated
+Email Checker	amazon_email	email, activated
+Instagram
+Product	Task type	Return fields
+CheckNumber	instagram	number, activated
+Email Checker	instagram_email	email, activated
+MAX
+Product	Task type	Return fields
+CheckNumber	max	number, activated
+Profile Checker	max_full	number, activated
+Netflix
+Product	Task type	Return fields
+CheckNumber	netflix	number, activated
+Email Checker	netflix_email	email, activated
+Line
+Product	Task type	Return fields
+CheckNumber	line	number, activated
+Profile Checker	line_senior	number, activated
+X (Twitter)
+Product	Task type	Return fields
+CheckNumber	twitter	number, activated
+Email Checker	twitter_email	email, activated
+Telegram (username)
+Product	Task type	Return fields
+Registration Checker	tg_username	username, activated, avatar_url
+Activity Checker	tg_username_activity	username, activated, uid, lastseen, activedays, member, avatar_url
+Profile Checker	tg_username_profile	username, activated, avatar_url, uid, lastseen, activedays, member, category, gender, hair_color, skin_color, age
+LinkedIn
+Product	Task type	Return fields
+CheckNumber	linkedin_phone	number, activated
+Email Checker	linkedin	email, activated
+Email Profile Checker	linkedin_profile	email, activated, country, gender, industry, job_title, inferred_salary
+Zalo
+Product	Task type	Return fields
+CheckNumber	zalo	number, activated
+TikTok
+Product	Task type	Return fields
+CheckNumber	tiktok	number, activated, username, uid
+Microsoft
+Product	Task type	Return fields
+CheckNumber	microsoft	number, activated
+Snapchat
+Product	Task type	Return fields
+CheckNumber	snapchat	number, activated
+Messenger
+Product	Task type	Return fields
+CheckNumber	messenger	number, activated
+GoTo
+Product	Task type	Return fields
+CheckNumber	goto	number, activated
+Threads
+Product	Task type	Return fields
+CheckNumber	threads	number, activated
+Spotify
+Product	Task type	Return fields
+Email Checker	spotify_email	email, activated
+Band
+Product	Task type	Return fields
+CheckNumber	band	number, activated
+DHL
+Product	Task type	Return fields
+CheckNumber	dhl	number, activated
+Sideline
+Product	Task type	Return fields
+CheckNumber	sideline	Number, activated
+Airbnb
+Product	Task type	Return fields
+CheckNumber	airbnb	number, activated
+Pornhub
+Product	Task type	Return fields
+Email Checker	pornhub	email, activated
+Temu
+Product	Task type	Return fields
+CheckNumber	temu	number, activated
+Exchange Registration Checkers
+Binance
+Product	Task type	Return fields
+CheckNumber	Binance	number, activated
+Email Checker	binance_email	email, activated
+KuCoin
+Product	Task type	Return fields
+CheckNumber	Kucoin	number, activated
+Email Checker	kucoin_email	email, activated
+Htx
+Product	Task type	Return fields
+CheckNumber	htx	number, activated
+Email Checker	htx_email	email, activated
+CoinW
+Product	Task type	Return fields
+CheckNumber	coinW	number, activated
+Email Checker	coinw_email	email, activated
+Crypto.com
+Product	Task type	Return fields
+Email Checker	crypto_email	email, activated
+Email And Global Carrier Checkers
+Email Validation
+Product	Task type	Return fields
+Upload Task	email_check	email, activated
+Global Carrier Checker
+Product	Task type	Return fields
+Global Carrier Checker	usaCarrier	number, number_type, country_code, carrier, underlying_carrier, region, city
+Advanced US Carrier Checker
+Product	Task type	Return fields
+Advanced US Carrier Checker	us_carrier_premium	Number, number_type, carrier, city
