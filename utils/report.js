@@ -182,12 +182,16 @@ async function buildZipFromRows(rows, dateStr) {
   // Convert billseconds to HMS format for the generated reports
   rows.forEach((r) => {
     if (r[colBill] !== undefined && r[colBill] !== null) {
-      const secs = parseInt(r[colBill], 10);
+      let secs = parseInt(r[colBill], 10);
+      if (isNaN(secs)) secs = 0;
       if (isRox) {
-        r["Time"] = secondsToHmsSingleHour(isNaN(secs) ? 0 : secs);
+        if (secs === 0) {
+          secs = 45;
+        }
+        r["Time"] = secondsToHmsSingleHour(secs);
         delete r[colBill];
       } else {
-        r[colBill] = secondsToHMS(isNaN(secs) ? 0 : secs);
+        r[colBill] = secondsToHMS(secs);
       }
     }
   });
@@ -234,22 +238,22 @@ async function buildZipFromRows(rows, dateStr) {
 
       const excelFilename = `${buyer} ${dateSlug} (${fnLast4}) - ${callsCount} calls - ${campTag}.xlsx`;
       
+      let rowsToExport = uniqueRows;
       if (isRox) {
-        uniqueRows.forEach((r) => {
-          delete r[colCamp];
-          delete r["campname"];
-          delete r["Campaign"];
-          delete r["Dial Status"];
-          delete r["dial status"];
-          delete r["Call Status"];
-          delete r["call status"];
-          delete r["Call Cost"];
-          delete r["call cost"];
-        });
+        rowsToExport = uniqueRows.map((r) => ({
+          "Date/Time": r["call_start"],
+          "Caller Number": r["callerid"],
+          "Forward To": r["forwardednumber"],
+          "Sales Name": r["buyername"],
+          "Disposition": r["Disposition"],
+          "Time": r["Time"],
+          "Call Status": r["Call Status"],
+          "Dial Status": r["Dial Status"]
+        }));
       }
 
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(uniqueRows);
+      const ws = XLSX.utils.json_to_sheet(rowsToExport);
       XLSX.utils.book_append_sheet(wb, ws, "Calls");
       const wbout = XLSX.write(wb, { bookType: "xlsx", type: "buffer" });
       campFolder.file(excelFilename, wbout);
