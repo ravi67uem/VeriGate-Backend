@@ -129,15 +129,17 @@ function uniqueRowsByCallerId(rows, colCaller) {
 
 async function buildZipFromRows(rows, dateStr) {
   const isDialcs = rows.isDialcs || false;
+  const isRox = rows.isRox || false;
   const { slug: dateSlug, weekday } = formatDateSlug(dateStr);
 
   const keys = Object.keys(rows[0] || {});
   
   const findKey = (candidates) => {
-    return keys.find(k => {
-      const normalizedK = k.trim().toLowerCase().replace(/[\s_./-]+/g, "");
-      return candidates.includes(normalizedK);
-    });
+    for (const cand of candidates) {
+      const found = keys.find(k => k.trim().toLowerCase().replace(/[\s_./-]+/g, "") === cand);
+      if (found) return found;
+    }
+    return null;
   };
 
   const colBuyer = findKey(["buyername", "buyernam", "buyer", "salesname"]) || keys[0] || "buyername";
@@ -177,11 +179,16 @@ async function buildZipFromRows(rows, dateStr) {
     });
   }
 
-  // Convert billseconds to HH:mm:ss format for the generated reports
+  // Convert billseconds to HMS format for the generated reports
   rows.forEach((r) => {
     if (r[colBill] !== undefined && r[colBill] !== null) {
       const secs = parseInt(r[colBill], 10);
-      r[colBill] = secondsToHMS(isNaN(secs) ? 0 : secs);
+      if (isRox) {
+        r["Time"] = secondsToHmsSingleHour(isNaN(secs) ? 0 : secs);
+        delete r[colBill];
+      } else {
+        r[colBill] = secondsToHMS(isNaN(secs) ? 0 : secs);
+      }
     }
   });
 
@@ -226,6 +233,21 @@ async function buildZipFromRows(rows, dateStr) {
       buyerStats[buyer].tfnLines.push({ fnLast4, callsCount });
 
       const excelFilename = `${buyer} ${dateSlug} (${fnLast4}) - ${callsCount} calls - ${campTag}.xlsx`;
+      
+      if (isRox) {
+        uniqueRows.forEach((r) => {
+          delete r[colCamp];
+          delete r["campname"];
+          delete r["Campaign"];
+          delete r["Dial Status"];
+          delete r["dial status"];
+          delete r["Call Status"];
+          delete r["call status"];
+          delete r["Call Cost"];
+          delete r["call cost"];
+        });
+      }
+
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(uniqueRows);
       XLSX.utils.book_append_sheet(wb, ws, "Calls");
@@ -266,6 +288,14 @@ function secondsToHMS(seconds) {
     String(mins).padStart(2, '0'),
     String(secs).padStart(2, '0')
   ].join(':');
+}
+
+function secondsToHmsSingleHour(seconds) {
+  const s = Math.max(0, Math.round(seconds));
+  const hrs = Math.floor(s / 3600);
+  const mins = Math.floor((s % 3600) / 60);
+  const secs = s % 60;
+  return `${hrs}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
 }
 
 function hmsToSeconds(hms) {
