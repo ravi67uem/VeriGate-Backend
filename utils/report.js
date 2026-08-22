@@ -406,6 +406,42 @@ function normalizeDialcsRows(rows) {
   return result;
 }
 
+function normalizeRoxRows(rows) {
+  if (!rows || rows.length === 0) return rows;
+  
+  // Check if it's Rox format
+  const keys = Object.keys(rows[0] || {}).map(k => k.trim().toLowerCase().replace(/[\s_./-]+/g, ""));
+  const isRox = keys.includes("salesname") && keys.includes("forwardto") && keys.includes("billsec");
+  
+  if (!isRox) return rows;
+
+  const result = rows.map(row => {
+    const obj = {};
+    for (const [key, val] of Object.entries(row)) {
+      const cleanH = key.trim().toLowerCase().replace(/[\s_./-]+/g, "");
+      
+      if (cleanH === "salesname") {
+        obj["buyername"] = val;
+      } else if (cleanH === "campaign") {
+        obj["campname"] = val;
+      } else if (cleanH === "forwardto") {
+        obj["forwardednumber"] = val;
+      } else if (cleanH === "callernumber") {
+        obj["callerid"] = val;
+      } else if (cleanH === "datetime") {
+        obj["call_start"] = val;
+      } else if (cleanH === "billsec") {
+        obj["billseconds"] = parseInt(val, 10) || 0;
+      } else {
+        obj[key] = val;
+      }
+    }
+    return obj;
+  });
+  result.isRox = true;
+  return result;
+}
+
 module.exports = {
   buildZipFromRows,
   buyerFirstWord,
@@ -419,6 +455,8 @@ module.exports = {
   uniqueRowsByCallerId,
   normalizeVoxeraRows,
   normalizeDialcsRows,
+  normalizeRoxRows,
   hmsToSeconds,
   secondsToHMS
 };
+
