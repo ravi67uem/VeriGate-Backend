@@ -37,7 +37,7 @@ const CHECKNUMBER_SERVICES = {
     "Viber Days Checker": { type: "viber_active", price: 5.0 },
     "Viber Age & Gender Checker": { type: "viber_senior", price: 15.0 },
     // iMessage
-    "iMessage Checker": { type: "imessage", price: 2.0 },
+    "iMessage Checker": { type: "imessage", price: 1.4 },
     // RCS
     "Rcs Checker": { type: "rcs", price: 1.5 },
     // Signal
@@ -362,7 +362,7 @@ router.post('/download', async (req, res) => {
         if (downloadType === 2 || downloadType === 3) {
             const zip = await JSZip.loadAsync(zipRes.data);
             const files = Object.keys(zip.files);
-            
+
             let targetFile = null;
             if (downloadType === 2) {
                 targetFile = files.find(f => f.toLowerCase().includes('activated.txt') || f.toLowerCase().includes('registered.txt') || (f.toLowerCase().includes('active') && !f.toLowerCase().includes('inactive') && !f.toLowerCase().includes('unregister')));
