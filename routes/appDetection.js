@@ -3,128 +3,24 @@ const router = express.Router();
 const multer = require('multer');
 const fs = require('fs');
 const axios = require('axios');
-const { createClient } = require('@supabase/supabase-js');
 const csv = require('csv-parser');
 const XLSX = require('xlsx');
 const FormData = require('form-data');
 const { recordTransaction } = require('../utils/transactionHelper');
-// require('dotenv').config();
-
-// Initialize Supabase
+const { isAdmin } = require('../middleware/auth');
 const supabase = require('../config/supabase');
+const {
+    CHECKNUMBER_SERVICES,
+    getEffectivePricePer10k,
+    getPricingPayload,
+    updatePricing,
+    resetAllPricing
+} = require('../utils/appDetectionPricing');
 
 const upload = multer({ dest: '/tmp/' });
-
-// CheckNumber Task Type mapping and prices per 10k from index.txt
-const CHECKNUMBER_SERVICES = {
-    // Telegram
-    "Telegram Checker": { type: "tg", price: 2.5 },
-    "Telegram Days Checker": { type: "tg_active", price: 3.5 },
-    "Telegram Age & Gender Checker": { type: "tg_avatar", price: 4.5 },
-    "Telegram Username Checker": { type: "tg_username", price: 1.5 },
-    "Telegram Username Profile Checker": { type: "tg_username_profile", price: 4.0 },
-    "Telegram Username Activity Checker": { type: "tg_username_activity", price: 3.0 },
-    // WhatsApp
-    "WhatsApp Checker": { type: "ws", price: 1.0 },
-    "WhatsApp Days Checker": { type: "ws_active", price: 1.8 },
-    "Whatsapp Age & Gender Checker": { type: "ws_avatar", price: 3.8 },
-    // Number Checker
-    "Phone Number Validation": { type: "phoneCheck", price: 4.0 },
-    "Number Active Check": { type: "active_check", price: 6.5 },
-    "High Value Users Checker": { type: "high_value_users", price: 7.0 },
-    // Viber
-    "Viber Checker": { type: "viber", price: 0.5 },
-    "Viber Days Checker": { type: "viber_active", price: 5.0 },
-    "Viber Age & Gender Checker": { type: "viber_senior", price: 15.0 },
-    // iMessage
-    "iMessage Checker": { type: "imessage", price: 1.4 },
-    // RCS
-    "Rcs Checker": { type: "rcs", price: 1.5 },
-    // Signal
-    "Signal Checker": { type: "signal", price: 1.5 },
-    // VK
-    "VK (VKontakte) Checker": { type: "vk", price: 5.0 },
-    // Apple ID
-    "Apple Checker": { type: "apple", price: 1.5 },
-    "Apple Email Checker": { type: "apple_email", price: 2.0 },
-    // Facebook
-    "Facebook Checker": { type: "facebook", price: 0.3 },
-    "Facebook Email Checker": { type: "facebook_email", price: 0.3 },
-    // Amazon
-    "Amazon Checker": { type: "amazon", price: 2.0 },
-    "Amazon Email Checker": { type: "amazon_email", price: 2.0 },
-    // Instagram
-    "Instagram Checker": { type: "instagram", price: 0.3 },
-    "Instagram Email Checker": { type: "instagram_email", price: 0.3 },
-    // MAX
-    "MAX Checker": { type: "max", price: 10.0 },
-    "MAX Full Profile Checker": { type: "max_full", price: 20.0 },
-    // Netflix
-    "Netflix Checker": { type: "netflix", price: 7.0 },
-    "Netflix Email Checker": { type: "netflix_email", price: 7.0 },
-    // Line
-    "Line Checker": { type: "line", price: 5.0 },
-    "Line Profile Checker": { type: "line_senior", price: 15.0 },
-    // Twitter
-    "Twitter Checker": { type: "twitter", price: 1.0 },
-    "Twitter/X Email Checker": { type: "twitter_email", price: 1.0 },
-    // LinkedIn
-    "LinkedIn CheckNumber": { type: "linkedin_phone", price: 5.0 },
-    "LinkedIn Email Checker": { type: "linkedin", price: 0.5 },
-    "LinkedIn Email Profile Checker": { type: "linkedin_profile", price: 10.0 },
-    // Zalo
-    "Zalo Checker": { type: "zalo", price: 2.0 },
-    // TikTok
-    "TikTok Checker": { type: "tiktok", price: 9.0 },
-    // Microsoft
-    "Microsoft Checker": { type: "microsoft", price: 2.0 },
-    // Snapchat
-    "Snapchat Checker": { type: "snapchat", price: 15.0 },
-    // Messenger
-    "Messenger Checker": { type: "messenger", price: 2.8 },
-    // GoTo
-    "GoTo Checker": { type: "goto", price: 7.0 },
-    // Threads
-    "Threads Checker": { type: "threads", price: 0.8 },
-    // Spotify
-    "Spotify Email Checker": { type: "spotify_email", price: 1.0 },
-    // Band
-    "Band Checker": { type: "band", price: 1.0 },
-    // DHL
-    "DHL Checker": { type: "dhl", price: 1.5 },
-    // Sideline
-    "Sideline Checker": { type: "sideline", price: 1.5 },
-    // Airbnb
-    "Airbnb Checker": { type: "airbnb", price: 2.0 },
-    // Pornhub
-    "Pornhub Checker": { type: "pornhub", price: 7.0 },
-    // Temu
-    "Temu Checker": { type: "temu", price: 2.0 },
-    // Binance
-    "Binance Checker": { type: "Binance", price: 6.5 },
-    "Binance Email Checker": { type: "binance_email", price: 15.0 },
-    // Kucoin
-    "Kucoin Checker": { type: "Kucoin", price: 7.0 },
-    "Kucoin Email Checker": { type: "kucoin_email", price: 7.0 },
-    // Htx
-    "Htx Checker": { type: "htx", price: 3.5 },
-    "Htx Email Checker": { type: "htx_email", price: 7.0 },
-    // CoinW
-    "CoinW Checker": { type: "coinW", price: 2.0 },
-    "CoinW Email Checker": { type: "coinw_email", price: 7.0 },
-    // Crypto.com
-    "Crypto.com Email Checker": { type: "crypto_email", price: 15.0 },
-    // Email/Global Carrier
-    "Email Check": { type: "email_check", price: 7.0 },
-    "Phone Carrier Bulk Lookup": { type: "usaCarrier", price: 2.0 },
-    "Advanced US Carrier Checker": { type: "us_carrier_premium", price: 15.0 }
-};
-
 const JSZip = require('jszip');
 const os = require('os');
 const path = require('path');
-
-const PRICE_PER_10K = 5.2; // USDT
 
 // Helper to parse file and get numbers
 async function parseFile(filePath, ext) {
@@ -153,6 +49,37 @@ async function parseFile(filePath, ext) {
     return numbers;
 }
 
+// GET /api/app-detect/pricing
+router.get('/pricing', (req, res) => {
+    try {
+        const payload = getPricingPayload();
+        res.json(payload);
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching pricing', error: err.message });
+    }
+});
+
+// POST /api/app-detect/pricing (Admin update prices & base formula)
+router.post('/pricing', isAdmin, (req, res) => {
+    try {
+        const { baseRate, baseUnit, customPrices } = req.body;
+        const updated = updatePricing({ baseRate, baseUnit, customPrices });
+        res.json({ success: true, message: 'App detection pricing updated successfully', data: updated });
+    } catch (err) {
+        res.status(500).json({ message: 'Error updating pricing', error: err.message });
+    }
+});
+
+// POST /api/app-detect/pricing/reset (Admin reset all prices to default)
+router.post('/pricing/reset', isAdmin, (req, res) => {
+    try {
+        const resetData = resetAllPricing();
+        res.json({ success: true, message: 'App detection pricing reset to defaults', data: resetData });
+    } catch (err) {
+        res.status(500).json({ message: 'Error resetting pricing', error: err.message });
+    }
+});
+
 // POST /api/app-detect/upload
 router.post('/upload', upload.single('file'), async (req, res) => {
     try {
@@ -163,9 +90,9 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             return res.status(400).json({ message: 'Missing file, userId, or appType' });
         }
 
-        const service = CHECKNUMBER_SERVICES[appType];
-        const taskType = service ? service.type : "ws";
-        const checknumberPrice = service ? service.price : 1.0;
+        const priceInfo = getEffectivePricePer10k(appType);
+        const taskType = priceInfo.taskType;
+        const costPer10k = priceInfo.costPer10k;
 
         const ext = file.originalname.split('.').pop().toLowerCase();
         const numbers = await parseFile(file.path, ext);
@@ -176,9 +103,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             return res.status(400).json({ message: 'File must contain at least 1000 valid numbers' });
         }
 
-        // Calculate Cost Dynamically based on the user-specified ratio:
-        // if cost is 1.5 then deduct 5.2 (ratio = 5.2 / 1.5)
-        const costPer10k = checknumberPrice * (5.2 / 1.5);
+        // Calculate Cost Dynamically using effective price per 10k
         const cost = (count / 10000) * costPer10k;
 
         // Check Balance
@@ -267,6 +192,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
             message: 'File uploaded successfully',
             sendID: apiData.task_id,
             deductedCost: cost,
+            costPer10k: costPer10k,
             remainingBalance: newBalance,
             count: count
         });
